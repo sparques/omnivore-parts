@@ -13,28 +13,26 @@ function r_worm(modul,thread_starts,lead_angle) = modul*thread_starts/(2*sin(lea
 
 
 module assembly(open=true) {
-//worm(modul=2, thread_starts=1, length=20, bore=0, pressure_angle=25, lead_angle=5, together_built=true);
-// omni-wheel and 6mm dshaft
-%color("red")translate([-r_gear(2,10),0,-20]) {
-	mirror([0,0,1])cylinder(d=60,h=30);
-	linear_extrude(40)d_shaft(6,5.4);
-}
-// motor
-%color("red")translate([r_worm(2,1,10),-(housing_width+walls)/2-50,0])rotate([-90,0,0])motor();
-// gears
-translate([r_worm(2,1,10),0,0])rotate([90,0,0])wormgear();
-translate([-r_gear(2,10),0,-4])rotate([0,0,-14])follower();
-//color("blue")worm_gear(modul=2, tooth_number=10, thread_starts=1, width=gear_thickness, length=20, worm_bore=3, gear_bore=6, pressure_angle=30, lead_angle=10, optimized=1, together_built=1, show_spur=1, show_worm=1);
-
-// bearings
-%color("gray")translate([-r_gear(2,10),0,0]) {
-			mirrorz()up(house_depth/4+2)bearing_M6();
-		}
-		
-	housing_back();
-	if (!open) {
-		#housing_front();
+	// omni-wheel and 6mm dshaft
+	%color("red")translate([0,0,-20]) center_over_follower() {
+		mirror([0,0,1])cylinder(d=60,h=30);
+		linear_extrude(40)d_shaft(6,5.4);
 	}
+	// motor
+	%color("red")translate([r_worm(2,1,10),-(housing_width+walls)/2-50,0])rotate([-90,0,0])motor();
+	// gears
+	translate([r_worm(2,1,10),0,0])rotate([-90,0,0])wormgear();
+	translate([-r_gear(2,10),0,-4])rotate([0,0,-14])follower();
+
+	// bearings
+	%color("gray")translate([-r_gear(2,10),0,0]) {
+				mirrorz()up(house_depth/4+2)bearing_M6();
+			}
+			
+		housing_back();
+		if (!open) {
+			#housing_front();
+		}
 }
 
 walls=4;
@@ -43,7 +41,7 @@ house_depth=40;
 housing_width=24;
 		
 module orbital_holes() {
-	mirrorz()for(t=[22,66,100])translate([r_worm(2,1,10),0,0])rotate([0,t,0])translate([(housing_width+walls)/2+1,0,0])children();
+	mirrorz()for(t=[22,66,100])translate([r_worm(2,1,10),0,0])rotate([0,t,0])translate([(housing_width+walls)/2+0,0,0])children();
 }
 
 module fillet2() {
@@ -83,12 +81,13 @@ module housing() {
 		//interrior space
 		minkowski() {
 			interrior_fillet=2;
-			union() {
+			chamfer_3d(dr=2) {
 				center_over_follower() {
 					//cube([housing_width+1-interrior_fillet,housing_width-interrior_fillet,10],center=true);
 					cylinder(r=r_gear(2,12),h=8,center=true);
 				}
-				center_over_worm()rotate([90,0,0])cylinder(d=24-interrior_fillet,h=housing_width-interrior_fillet,center=true);
+				//center_over_worm()rotate([90,0,0])cylinder(d=24-interrior_fillet,h=housing_width-interrior_fillet,center=true);
+				center_over_worm()rotate([90,0,0])cylinder(d=r_worm(2,1,10)*2.5,h=housing_width-interrior_fillet,center=true);
 			}
 			sphere(d=interrior_fillet);
 		}
@@ -106,11 +105,12 @@ module housing() {
 		}
 		
 		//motor mount screw holes
-		translate([r_worm(2,1,10),-(housing_width+walls)/2+2.01,0])rotate([-90,0,0])mirror([0,0,1])motor_mount_screws();
+		//#translate([r_worm(2,1,10),-(housing_width+walls)/2+2.01,0])rotate([-90,0,0])mirror([0,0,1])motor_mount_screws();
+		translate([0,-(housing_width+walls)/2-1,0])center_over_worm()rotate([-90,0,0])motor_mount_screws2(20,15);
 		
 		// holes to hold the housing halves together
 		mirrorz(){
-			translate([-18,0,9])rotate([90,0,0])linear_extrude(housing_width*3,center=true)M4();
+			center_over_follower()mirrorx()translate([-8,0,9])rotate([90,0,0])linear_extrude(housing_width*3,center=true)M4();
 			translate([-26+walls,0,16])rotate([90,0,0])linear_extrude(housing_width*3,center=true)M4();
 		}
 		orbital_holes()rotate([90,0,0]){
@@ -144,7 +144,8 @@ module wormgear() {
 			cylinder(d=6,h=23,center=true);
 			if (worm_bearing) {
 				cylinder(d=6,h=23/2+5); // extend farther to reach into the 
-			} 
+			}
+			up(10)chamfer_ring(s=1,d=6);
 		}
 		linear_extrude(24,center=true)mirror([1,0,0])d_shaft(3.5,3.1);
 		//rotate([0,90,0])linear_extrude(50,center=true)M3(); //this won't do anything, the motor shaft is too short :(
@@ -157,7 +158,7 @@ module wormgear() {
 module follower() {
 	//color("blue")worm_gear(modul=2, tooth_number=10, thread_starts=1, width=gear_thickness, length=20, worm_bore=3, gear_bore=6, pressure_angle=30, lead_angle=10, optimized=1, together_built=1, show_spur=1, show_worm=1);
 	difference() {
-		rotate([0,0,21])spur_gear(modul=2, tooth_number=10, width=8, bore=0, pressure_angle=30, helix_angle=10);
+		rotate([0,0,21])spur_gear(modul=2, tooth_number=10, width=8, bore=0, pressure_angle=30, helix_angle=-10);
 		up(-0.01)linear_extrude(9)d_shaft(6,5.4);
 		up(4)rotate([0,90,0])linear_extrude(50,center=true)M3();
 	}
@@ -170,12 +171,10 @@ module follower() {
 // do these one at a time for printing
 //housing_back();
 
-//housing_front();
+housing_front();
 
-wormgear();
-
+//wormgear();
 //follower();
-
 
 
 
