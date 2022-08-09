@@ -57,4 +57,24 @@ module motor_mount_screws2(screw_length,head_length) {
 	linear_extrude(head_length)M4();
 }
 
-motor_mount_screws2(30,10);
+module motor_flange() {
+	cylinder(d=22,h=2);
+	cylinder(d=10,h=12);
+}
+
+// flange for 6MM shaft
+module M6_flange(holes=false,shaft_hole=false) {
+	height=15;
+	collar_d=15;
+	flat_height=3;
+	flat_d=28;
+	difference() {
+		union() {
+			cylinder(d=collar_d,h=height);
+			cylinder(d=flat_d,h=flat_height);
+		}
+		if (holes) {
+			linear_extrude(height*2.1,center=true)6M_flange_holes(shaft=shaft_hole);
+		}
+	}
+}
